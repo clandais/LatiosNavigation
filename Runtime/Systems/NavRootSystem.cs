@@ -10,8 +10,6 @@ namespace LatiosNavigation.Systems
         protected override void CreateSystems()
         {
             EnableSystemSorting = true;
-
-            GetOrCreateAndAddUnmanagedSystem<AgentPathDebugSystem>();
             GetOrCreateAndAddUnmanagedSystem<AgentEdgePathSystem>();
             GetOrCreateAndAddUnmanagedSystem<AgentPathFunnelingSystem>();
         }

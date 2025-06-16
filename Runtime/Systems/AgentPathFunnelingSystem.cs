@@ -36,10 +36,15 @@ namespace LatiosNavigation.Systems
         [BurstCompile]
         public void OnDestroy(ref SystemState state) { }
 
+
+        /// <summary>
+        ///     <see href="https://digestingduck.blogspot.com/2010/03/simple-stupid-funnel-algorithm.html" />
+        /// </summary>
         [BurstCompile]
         partial struct FunnelJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter Ecb;
+
 
             void Execute(Entity entity, [EntityIndexInQuery] int entityIndex, TransformAspect transformAspect,
                 ref AgentPath agentPath, in AgentDestination destination, in DynamicBuffer<AgentPathEdge> portals,
@@ -74,14 +79,14 @@ namespace LatiosNavigation.Systems
 
                 var portalCount = portals.Length;
                 var portalApex =
-                    //start;
                     portals[0].PortalVertex1; // Start with the first portal's left vertex as the apex
 
                 var portalLeft = portals[0].PortalVertex1;
                 var portalRight = portals[0].PortalVertex2;
-                int leftIndex = 0, rightIndex = 0;
-                var i = 1;
-                while (i < portalCount)
+                int leftIndex = 0, rightIndex = 0, apexIndex = 0;
+
+
+                for (var i = 1; i < portalCount; i++)
                 {
                     var left = portals[i].PortalVertex1;
                     var right = portals[i].PortalVertex2;
@@ -103,15 +108,17 @@ namespace LatiosNavigation.Systems
                                 Position = portalLeft
                             });
 
-                            // path.Add(portalLeft);
+
                             portalApex = portalLeft;
-                            i          = leftIndex + 1;
+                            apexIndex  = leftIndex;
 
                             // Reset
                             portalLeft  = portalApex;
                             portalRight = portalApex;
-                            leftIndex   = i - 1;
-                            rightIndex  = i - 1;
+
+                            leftIndex  = apexIndex;
+                            rightIndex = apexIndex;
+                            i          = apexIndex;
                             continue;
                         }
                     }
@@ -133,20 +140,18 @@ namespace LatiosNavigation.Systems
                                 Position = portalRight
                             });
 
-                            //path.Add(portalRight);
+
                             portalApex = portalRight;
-                            i          = rightIndex + 1;
+                            apexIndex  = rightIndex;
 
                             // Reset
                             portalLeft  = portalApex;
                             portalRight = portalApex;
-                            leftIndex   = i - 1;
-                            rightIndex  = i - 1;
-                            continue;
+                            leftIndex   = apexIndex;
+                            rightIndex  = apexIndex;
+                            i           = apexIndex;
                         }
                     }
-
-                    i++;
                 }
 
 
