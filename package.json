@@ -9,7 +9,8 @@
     "ecs",
     "latios",
     "framework",
-    "addons"
+    "addons",
+    "navmesh"
   ],
   "dependencies": {}
 }
