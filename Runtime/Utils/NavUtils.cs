@@ -95,5 +95,25 @@ namespace LatiosNavigation.Utils
             t2Coords.Dispose();
             return foundCount == 2;
         }
+
+        public static bool FindClosestTriangleToPoint(float3 point, ref NavMeshSurfaceBlob nevMesh,
+            out int containingTriangleIndex)
+        {
+            containingTriangleIndex = -1;
+            var closestDistanceSq = float.MaxValue;
+
+            for (var i = 0; i < nevMesh.Triangles.Length; i++)
+            {
+                var triangle = nevMesh.Triangles[i];
+                var distanceSq = TriMath.DistanceToTriangleSq(point, triangle);
+                if (distanceSq < closestDistanceSq)
+                {
+                    closestDistanceSq       = distanceSq;
+                    containingTriangleIndex = i;
+                }
+            }
+
+            return containingTriangleIndex != -1;
+        }
     }
 }

@@ -48,5 +48,23 @@ namespace LatiosNavigation.Utils
             var bz = c.z - a.z;
             return bx * az - ax * bz;
         }
+
+
+        public static float DistanceToTriangleSq(float3 point, NavTriangle triangle)
+        {
+            var r = triangle.Radius;
+            var d = math.distance(point, triangle.Centroid);
+
+            if (d > r)
+                // Point is outside the bounding radius of the triangle
+                return math.distancesq(point, triangle.Centroid);
+
+            // Point is within the bounding radius, check if it's inside the triangle
+            if (IsPointInTriangle(point, triangle))
+                // Point is inside the triangle
+                return 0f;
+
+            return float.PositiveInfinity;
+        }
     }
 }

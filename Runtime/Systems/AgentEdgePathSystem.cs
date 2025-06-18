@@ -85,9 +85,17 @@ namespace LatiosNavigation.Systems
                 if (!NavUtils.FindTriangleContainingPoint(transform.worldPosition, ref blobAsset,
                         out var startTriangleIndex))
                 {
-                    Debug.LogWarning($"Pathfinding: Agent at {transform.worldPosition} is not on the navmesh.");
                     buffer.Clear();
-                    return;
+
+                    // find the closest triangle to the agent's position
+                    if (!NavUtils.FindClosestTriangleToPoint(transform.worldPosition, ref blobAsset,
+                            out startTriangleIndex))
+                    {
+                        Debug.LogWarning(
+                            $"Pathfinding: No triangles found near agent at {transform.worldPosition}. Pathfinding cannot proceed.");
+
+                        return;
+                    }
                 }
 
                 if (!NavUtils.FindTriangleContainingPoint(destinationPosition, ref blobAsset,
