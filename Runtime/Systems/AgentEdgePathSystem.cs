@@ -45,8 +45,9 @@ namespace LatiosNavigation.Systems
 
             state.Dependency = new PathJob
             {
-                Ecb                = ecb.AsParallelWriter(),
-                NavMeshSurfaceBlob = navMeshSurfaceBlob
+                AgentHasEdgePathTagLookup  = SystemAPI.GetComponentLookup<AgentHasEdgePathTag>(),
+                AgenPathRequestedTagLookup = SystemAPI.GetComponentLookup<AgenPathRequestedTag>(),
+                NavMeshSurfaceBlob         = navMeshSurfaceBlob
             }.ScheduleParallel(m_query, state.Dependency);
         }
 
@@ -68,8 +69,11 @@ namespace LatiosNavigation.Systems
                     QueueElement y) => x.Cost.CompareTo(y.Cost);
             }
 
-            [ReadOnly] public NavMeshSurfaceBlobReference        NavMeshSurfaceBlob;
-            public            EntityCommandBuffer.ParallelWriter Ecb;
+            [ReadOnly]                            public NavMeshSurfaceBlobReference          NavMeshSurfaceBlob;
+            [NativeDisableParallelForRestriction] public ComponentLookup<AgentHasEdgePathTag> AgentHasEdgePathTagLookup;
+
+            [NativeDisableParallelForRestriction]
+            public ComponentLookup<AgenPathRequestedTag> AgenPathRequestedTagLookup;
 
             void Execute(Entity entity, [EntityIndexInQuery] int idx,
                 TransformAspect transform,
@@ -265,8 +269,8 @@ namespace LatiosNavigation.Systems
                 costSoFar.Dispose();
                 priorityQueue.Dispose();
 
-                Ecb.SetComponentEnabled<AgenPathRequestedTag>(idx, entity, false);
-                Ecb.SetComponentEnabled<AgentHasEdgePathTag>(idx, entity, true);
+                AgenPathRequestedTagLookup.SetComponentEnabled(entity, false);
+                AgentHasEdgePathTagLookup.SetComponentEnabled(entity, true);
 
                 if (buffer.Length == 0 && startTriangleIndex != goalTriangleIndex)
                     Debug.LogWarning("Pathfinding resulted in an empty portal list for a non-trivial path.");

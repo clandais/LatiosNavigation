@@ -3,6 +3,7 @@ using Latios.Transforms;
 using LatiosNavigation.Authoring;
 using LatiosNavigation.Utils;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -29,7 +30,7 @@ namespace LatiosNavigation.Systems
             var ecb = m_latiosWorld.syncPoint.CreateEntityCommandBuffer();
             state.Dependency = new FunnelJob
             {
-                Ecb = ecb.AsParallelWriter()
+                AgentHasEdgePathTagLookup = SystemAPI.GetComponentLookup<AgentHasEdgePathTag>()
             }.ScheduleParallel(m_query, state.Dependency);
         }
 
@@ -43,8 +44,7 @@ namespace LatiosNavigation.Systems
         [BurstCompile]
         partial struct FunnelJob : IJobEntity
         {
-            public EntityCommandBuffer.ParallelWriter Ecb;
-
+            [NativeDisableParallelForRestriction] public ComponentLookup<AgentHasEdgePathTag> AgentHasEdgePathTagLookup;
 
             void Execute(Entity entity, [EntityIndexInQuery] int entityIndex, TransformAspect transformAspect,
                 ref AgentPath agentPath, in AgentDestination destination, in DynamicBuffer<AgentPathEdge> portals,
@@ -67,7 +67,7 @@ namespace LatiosNavigation.Systems
 
                     agentPath.PathLength = 2;
                     agentPath.PathIndex  = 0;
-                    Ecb.SetComponentEnabled<AgentHasEdgePathTag>(entityIndex, entity, false);
+                    AgentHasEdgePathTagLookup.SetComponentEnabled(entity, false);
                     Debug.Log($"No portals for agent {entity.Index}, direct path from {start} to {end}.");
                     return;
                 }
@@ -162,7 +162,7 @@ namespace LatiosNavigation.Systems
 
                 agentPath.PathLength = pathPoints.Length;
                 agentPath.PathIndex  = 0;
-                Ecb.SetComponentEnabled<AgentHasEdgePathTag>(entityIndex, entity, false);
+                AgentHasEdgePathTagLookup.SetComponentEnabled(entity, false);
             }
         }
 
