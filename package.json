@@ -1,7 +1,7 @@
 ﻿{
   "name": "com.github.clandais.latiosnavigation",
   "displayName": "Latios Navigation",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "unity": "6001.0",
   "description": "Latios Navigation is a Unity package that provides navigation and pathfinding capabilities for entities. It includes features such as pathfinding algorithms and navigation mesh and agent baking.",
   "keywords": [
