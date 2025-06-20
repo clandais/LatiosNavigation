@@ -39,7 +39,7 @@ namespace LatiosNavigation.Utils
             return u >= 0 && v >= 0 && u + v <= 1;
         }
 
-        public static float TriArea2(float3 a, float3 b, float3 c)
+        public static float SignedArea2D(float3 a, float3 b, float3 c)
         {
             // 2D signed area (XZ plane)
             var ax = b.x - a.x;
@@ -47,6 +47,14 @@ namespace LatiosNavigation.Utils
             var bx = c.x - a.x;
             var bz = c.z - a.z;
             return bx * az - ax * bz;
+        }
+
+        public static float SignedArea3D(float3 a, float3 b, float3 c)
+        {
+            // 3D signed area using cross product
+            var ab = b - a;
+            var ac = c - a;
+            return math.length(math.cross(ab, ac)) * 0.5f; // Area of the triangle
         }
 
 

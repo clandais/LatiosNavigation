@@ -92,9 +92,10 @@ namespace LatiosNavigation.Systems
                     var right = portals[i].PortalVertex2;
 
                     // Right leg
-                    if (TriMath.TriArea2(portalApex, portalRight, right) <= 0f)
+                    if (TriMath.SignedArea2D(portalApex, portalRight, right) <= 0f)
                     {
-                        if (Vequals(portalApex, portalRight) || TriMath.TriArea2(portalApex, portalLeft, right) > 0f)
+                        if (Vequals(portalApex, portalRight) ||
+                            TriMath.SignedArea2D(portalApex, portalLeft, right) > 0f)
                         {
                             // Tighten the funnel
                             portalRight = right;
@@ -124,9 +125,9 @@ namespace LatiosNavigation.Systems
                     }
 
                     // Left leg
-                    if (TriMath.TriArea2(portalApex, portalLeft, left) >= 0f)
+                    if (TriMath.SignedArea2D(portalApex, portalLeft, left) >= 0f)
                     {
-                        if (Vequals(portalApex, portalLeft) || TriMath.TriArea2(portalApex, portalRight, left) < 0f)
+                        if (Vequals(portalApex, portalLeft) || TriMath.SignedArea2D(portalApex, portalRight, left) < 0f)
                         {
                             // Tighten the funnel
                             portalLeft = left;
@@ -166,6 +167,6 @@ namespace LatiosNavigation.Systems
             }
         }
 
-        static bool Vequals(float3 a, float3 b) => math.distancesq(a.xz, b.xz) < .001f * .001f;
+        static bool Vequals(float3 a, float3 b) => math.distancesq(a, b) < .001f * .001f;
     }
 }

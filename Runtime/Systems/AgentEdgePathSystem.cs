@@ -12,7 +12,7 @@ using UnityEngine;
 namespace LatiosNavigation.Systems
 {
     [RequireMatchingQueriesForUpdate]
-    public partial struct AgentEdgePathSystem : ISystem
+    internal partial struct AgentEdgePathSystem : ISystem
     {
         EntityQuery          m_query;
         LatiosWorldUnmanaged m_latiosWorld;
@@ -88,33 +88,38 @@ namespace LatiosNavigation.Systems
                 // Determine start and goal triangles for A*
                 if (!NavUtils.FindTriangleContainingPoint(transform.worldPosition, ref blobAsset,
                         out var startTriangleIndex))
-                {
-                    buffer.Clear();
-
-                    // find the closest triangle to the agent's position
+                    // Agent is not on the navmesh, find the closest triangle to the agent's position
                     if (!NavUtils.FindClosestTriangleToPoint(transform.worldPosition, ref blobAsset,
                             out startTriangleIndex))
                     {
+                        buffer.Clear();
+                        // No triangles found near the agent, cannot proceed with pathfinding
                         Debug.LogWarning(
                             $"Pathfinding: No triangles found near agent at {transform.worldPosition}. Pathfinding cannot proceed.");
 
                         return;
                     }
-                }
 
+                // Check if the destination is on the navmesh
                 if (!NavUtils.FindTriangleContainingPoint(destinationPosition, ref blobAsset,
                         out var goalTriangleIndex))
-                {
-                    Debug.LogWarning($"Pathfinding: Destination at {destinationPosition} is not on the navmesh.");
-                    buffer.Clear();
-                    return;
-                }
+                    // Destination is not on the navmesh, find the closest triangle to the destination position
+                    if (!NavUtils.FindClosestTriangleToPoint(destinationPosition, ref blobAsset,
+                            out goalTriangleIndex))
+                    {
+                        buffer.Clear();
+                        // No triangles found near the destination, cannot proceed with pathfinding
+                        Debug.LogWarning(
+                            $"Pathfinding: No triangles found near destination at {destinationPosition}. Pathfinding cannot proceed.");
+
+                        return;
+                    }
 
                 if (startTriangleIndex == goalTriangleIndex)
                 {
                     // Agent and destination are in the same triangle.
                     // Path is just start to end point. Funnel algorithm might still be used with agent pos and target pos.
-                    // For now, clear buffer, or add a single segment if your funnel expects it.
+                    // Clear buffer and add a single segment if your funnel expects it.
                     buffer.Clear();
                     // Add a "degenerate" portal or handle in funnel algorithm
                     buffer.Add(new AgentPathEdge
@@ -150,6 +155,7 @@ namespace LatiosNavigation.Systems
                         break; // Found the goal triangle
                     }
 
+                    // Process the current triangle's neighbors
                     var offsetData = blobAsset.AdjacencyOffsets[element.Index];
                     var currentTriangleForCost = NavUtils.GetTriangleByIndex(element.Index, ref blobAsset);
 
@@ -161,15 +167,15 @@ namespace LatiosNavigation.Systems
                         var newCost = costSoFar[element.Index] + (int)math.distance(
                             currentTriangleForCost.Centroid, neighborTriangleForCost.Centroid) * 10;
 
-
+                        // Check if the neighbor triangle is already in the cost map or if the new cost is lower
                         if (!costSoFar.TryGetValue(neighborIndex, out var existingCost) || newCost < existingCost)
                         {
                             costSoFar[neighborIndex] = newCost;
+                            // Add or update the neighbor in the priority queue
                             priorityQueue.Enqueue(new QueueElement
                             {
                                 Index = neighborIndex,
-                                // Heuristic could be added here for A* (e.g., distance to goalTriangleIndex center)
-                                Cost = newCost
+                                Cost  = newCost
                             });
 
                             cameFrom[neighborIndex] = element.Index;
@@ -177,12 +183,14 @@ namespace LatiosNavigation.Systems
                     }
                 }
 
-
                 buffer.Clear(); // Clear previous path
-
                 if (!foundGoal)
                 {
-                    Debug.LogWarning("Pathfinding failed to find a path to the goal triangle.");
+                    buffer.Add(new AgentPathEdge
+                    {
+                        PortalVertex1 = transform.worldPosition, PortalVertex2 = transform.worldPosition
+                    });
+
                     cameFrom.Dispose();
                     costSoFar.Dispose();
                     priorityQueue.Dispose();
@@ -194,7 +202,6 @@ namespace LatiosNavigation.Systems
                     new NativeList<AgentPathEdge>(Allocator.Temp);
 
                 var currentPathIndex = goalTriangleIndex;
-
                 while (currentPathIndex != startTriangleIndex)
                 {
                     if (!cameFrom.TryGetValue(currentPathIndex, out var previousPathIndex))
@@ -210,6 +217,7 @@ namespace LatiosNavigation.Systems
                     var triCurrent = NavUtils.GetTriangleByIndex(currentPathIndex, ref blobAsset);
                     var triPrevious = NavUtils.GetTriangleByIndex(previousPathIndex, ref blobAsset);
 
+                    // Check if the triangles share a portal
                     if (NavUtils.TryGetSharedPortalVertices(triPrevious, triCurrent, out var p1, out var p2))
                     {
                         // Add portal between triPrevious and triCurrent
